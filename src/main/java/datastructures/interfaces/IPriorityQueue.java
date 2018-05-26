@@ -38,21 +38,6 @@ public interface IPriorityQueue<T extends Comparable<T>> {
     void insert(T item);
 
     /**
-     * This method finds the given item in the heap, and removes it.
-     *
-     * Note: this is an OPTIONAL method. A valid IPriorityQueue is not
-     * required to support this operation.
-     *
-     * (Basically, we are giving you the option to implement this method
-     * because it may be useful when implementing Dijkstra's algorithm,
-     * depending on how you approach it.)
-     *
-     * @throws  UnsupportedOperationException  if the IPriorityQueue implementation decides not to support this method
-     * @throws  NoSuchElementException  if the given item does not exist
-     */
-    void remove(T item);
-
-    /**
      * Returns the number of elements contained within this queue.
      */
     int size();
