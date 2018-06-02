@@ -119,4 +119,31 @@ public class TestArrayDisjointSet extends BaseTest {
             }
         }
     }
+    
+    @Test(timeout=SECOND)
+    public void testEqualUnion() {
+        String[] items = new String[] {"a", "b", "c", "d", "e", "f"};
+        IDisjointSet<String> forest = this.createForest(items);
+        forest.union("a", "b");
+        int id = forest.findSet("a");
+        forest.union("c", "d");
+        forest.union("a", "e");
+        forest.union("c", "f");
+        forest.union("a", "d");
+        for (int i = 0; i < 6; i++) {
+            check(forest, items, new int[] {id,id,id,id,id,id});
+        }
+        
+        
+    }
+    
+    @Test(timeout=SECOND) 
+    public void testResize(){
+        IDisjointSet<Integer> forest = new ArrayDisjointSet<>();
+        for (int i = 0; i < 100000; i++) {
+           forest.makeSet(i); 
+        }
+    }
+    
+    
 }

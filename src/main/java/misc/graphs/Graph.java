@@ -1,8 +1,17 @@
 package misc.graphs;
 
+import datastructures.concrete.ArrayDisjointSet;
+import datastructures.concrete.ArrayHeap;
+import datastructures.concrete.ChainedHashSet;
 import datastructures.concrete.DoubleLinkedList;
+import datastructures.concrete.KVPair;
+import datastructures.concrete.dictionaries.ChainedHashDictionary;
+import datastructures.interfaces.IDictionary;
+import datastructures.interfaces.IDisjointSet;
 import datastructures.interfaces.IList;
+import datastructures.interfaces.IPriorityQueue;
 import datastructures.interfaces.ISet;
+import misc.Searcher;
 import misc.exceptions.NoPathExistsException;
 import misc.exceptions.NotYetImplementedException;
 
@@ -39,7 +48,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
     // - 'V' is the type of the vertices in the graph. The vertices can be
     //   any type the client wants -- there are no restrictions.
     //
-    // - 'E' is the type of the edges in the graph. We've contrained Graph
+    // - 'E' is the type of the edges in the graph. We've constrained Graph
     //   so that E *must* always be an instance of Edge<V> AND Comparable<E>.
     //
     //   What this means is that if you have an object of type E, you can use
@@ -59,8 +68,45 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * @throws IllegalArgumentException  if one of the edges connects to a vertex not
      *                                   present in the 'vertices' list
      */
+
+    private IDictionary<V, IList<E>> graph;
+    private IDisjointSet<V> paths;
+    private IList<E> edges;
+    private IList<V> vertices;
+    
     public Graph(IList<V> vertices, IList<E> edges) {
-        // TODO: Your code here
+        this.graph = new ChainedHashDictionary<V, IList<E>>();
+        this.paths = new ArrayDisjointSet<V>();
+        this.vertices = vertices;
+        //exceptions
+        for (E edge : edges) {
+            if (edge.getWeight() < 0) {
+                throw new IllegalArgumentException();
+            } 
+            V v1 = edge.getVertex1();
+            V v2 = edge.getVertex2();
+            if (!vertices.contains(v1) || !vertices.contains(v2)) {
+                throw new IllegalArgumentException();
+            }
+        }
+        
+        for (V vertex : vertices) {
+            this.paths.makeSet(vertex);
+            IList<E> myEdges = new DoubleLinkedList<>();
+            for (E edge : edges) {
+                if (edge.getVertex1().equals(vertex) 
+                        || edge.getVertex2().equals(vertex)) {
+                    myEdges.add(edge);
+                }
+            }
+            this.graph.put(vertex, myEdges);
+            //initialize each vertex to be a connected component
+            
+        }
+        //sort the edges by weight
+        this.edges = Searcher.topKSort(edges.size(), edges);
+        
+       
     }
 
     /**
@@ -87,14 +133,14 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * Returns the number of vertices contained within this graph.
      */
     public int numVertices() {
-        throw new NotYetImplementedException();
+        return this.graph.size();
     }
 
     /**
      * Returns the number of edges contained within this graph.
      */
     public int numEdges() {
-        throw new NotYetImplementedException();
+        return this.edges.size();
     }
 
     /**
@@ -106,7 +152,16 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * Precondition: the graph does not contain any unconnected components.
      */
     public ISet<E> findMinimumSpanningTree() {
-        throw new NotYetImplementedException();
+        ISet<E> mst = new ChainedHashSet<>();
+        for (E edge : this.edges) {
+            V v1 = edge.getVertex1();
+            V v2 = edge.getVertex2();
+            if (this.paths.findSet(v1) != this.paths.findSet(v2)) {
+               mst.add(edge); 
+               this.paths.union(v1, v2);
+            }
+        }
+        return mst;    
     }
 
     /**
@@ -122,6 +177,122 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
      * @throws NoPathExistsException  if there does not exist a path from the start to the end
      */
     public IList<E> findShortestPathBetween(V start, V end) {
-        throw new NotYetImplementedException();
+        //throw new NotYetImplementedException();
+        //Dijkstra's algorithm, infinity: Double.POSITIVE_INFINITY
+        //this.graph contains all the vertex and the vertices it connects to;
+        //Dijkstra
+        if (start.equals(end)) {
+            return new DoubleLinkedList<>();
+        }
+        IList<E> output = this.dijkstra(start, end, this.graph);
+        if (output.isEmpty()) {
+            throw new NoPathExistsException();
+        } else {
+            return output;
+        }
     }
+    
+    private IList<E> dijkstra(V start, V end,IDictionary<V, IList<E>> graph) {
+        //change all the vertices in the graph into newV
+        //initialize the distance and source.dist = 0
+        //initialize the MPQ
+        IList<newV> newVertices = new DoubleLinkedList<>();
+        IPriorityQueue<newV> toProcess = new ArrayHeap<>();
+        ISet<V> processed = new ChainedHashSet<>();
+        IList<E> output = new DoubleLinkedList<>();
+        for (KVPair<V, IList<E>> pair : this.graph) {
+            V vertex = pair.getKey();
+            if (vertex.equals(start)) {
+                newVertices.add(new newV(vertex, 0.0));
+                toProcess.insert(new newV(vertex, 0.0));
+            } else {
+                newVertices.add(new newV(vertex));
+            } 
+        }
+        while (toProcess != null && toProcess.size() != 0) {
+            newV u = toProcess.peekMin();
+            V uprime = u.getVertex();
+            if (uprime.equals(end)) {
+                return u.path;
+            } else  if (processed.contains(uprime)) {
+                toProcess.removeMin();
+            } else {
+                IList<E> edges = this.graph.get(uprime);
+                for (E edge : edges) {
+                    V vprime = edge.getOtherVertex(uprime);
+                    for (newV v: newVertices) {
+                        if (v.getVertex().equals(vprime)) {
+                            if (u.getDistance() + edge.getWeight() < v.getDistance()) {
+                                IList<E> path = new DoubleLinkedList<>();
+                                for (E e : u.path) {
+                                    path.add(e);
+                                }
+                                path.add(edge);
+                                newV dupe = new newV(vprime, u.getDistance() + edge.getWeight(), path);
+                                toProcess.insert(dupe);
+                               
+                            }
+                            break;
+                        } 
+                    }   
+                }
+                processed.add(toProcess.removeMin().getVertex());
+            }
+            
+            }
+            
+             
+            
+        
+        return output;
+        
+        
+        
+        
+        
+        
+    }
+    private class newV implements Comparable<newV>{
+        private V vertex;
+        private double distance;
+        IList<E> path;
+        
+        private newV(V vertex) {
+            this.vertex = vertex;
+            this.distance = Double.POSITIVE_INFINITY;
+            this.path = new DoubleLinkedList<>();
+        }
+        
+        private newV(V vertex, Double value) {
+            this.vertex = vertex;
+            this.distance = value;
+            this.path = new DoubleLinkedList<>();
+        }
+        
+        private newV(V vertex, Double value, IList<E> path) {
+            this.vertex = vertex;
+            this.distance = value;
+            this.path = path;
+        }
+        
+        public V getVertex() {
+            return this.vertex;
+        }
+        public double getDistance() {
+            return this.distance;
+        }
+        
+        @Override
+        public int compareTo(newV vertex) {
+            if (this.distance == vertex.getDistance()) {
+                return 0;
+            } else if (this.distance > vertex.getDistance()) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+    }
+    
+  
 }
