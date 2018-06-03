@@ -40,7 +40,7 @@ public class MainWindow extends JFrame {
         IDictionary<String, BaseMazeGenerator> baseGenerators = new ArrayDictionary<>();
         baseGenerators.put(
                 "Grid",
-                new GridGenerator(50, 50));
+                new GridGenerator(40, 40));
         baseGenerators.put(
                 "Voronoi",
                 new VoronoiGenerator(800, 10, 10, 5));

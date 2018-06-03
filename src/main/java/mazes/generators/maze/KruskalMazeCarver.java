@@ -28,8 +28,9 @@ public class KruskalMazeCarver implements MazeCarver {
         
         //iterators assume user won't modify the data
         for (Wall wall : maze.getWalls()) {
-            if (!maze.getUntouchableWalls().contains(wall)) 
+            if (!maze.getUntouchableWalls().contains(wall)) {
                 toRemove.add(wall);
+            }
         }
         //assign random distance to each edge
         for (Wall wall : toRemove) {

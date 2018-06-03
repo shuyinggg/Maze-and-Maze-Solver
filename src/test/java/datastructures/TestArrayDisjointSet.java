@@ -131,7 +131,7 @@ public class TestArrayDisjointSet extends BaseTest {
         forest.union("c", "f");
         forest.union("a", "d");
         for (int i = 0; i < 6; i++) {
-            check(forest, items, new int[] {id,id,id,id,id,id});
+            check(forest, items, new int[] {id, id, id, id, id, id});
         }
         
         

@@ -13,7 +13,7 @@ import datastructures.interfaces.IPriorityQueue;
 import datastructures.interfaces.ISet;
 import misc.Searcher;
 import misc.exceptions.NoPathExistsException;
-import misc.exceptions.NotYetImplementedException;
+
 
 /**
  * Represents an undirected, weighted graph, possibly containing self-loops, parallel edges,
@@ -192,35 +192,35 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         }
     }
     
-    private IList<E> dijkstra(V start, V end,IDictionary<V, IList<E>> graph) {
+    private IList<E> dijkstra(V start, V end, IDictionary<V, IList<E>> maze) {
         //change all the vertices in the graph into newV
         //initialize the distance and source.dist = 0
         //initialize the MPQ
-        IList<newV> newVertices = new DoubleLinkedList<>();
-        IPriorityQueue<newV> toProcess = new ArrayHeap<>();
+        IList<NewV<V, E>> newVertices = new DoubleLinkedList<>();
+        IPriorityQueue<NewV<V, E>> toProcess = new ArrayHeap<>();
         ISet<V> processed = new ChainedHashSet<>();
         IList<E> output = new DoubleLinkedList<>();
         for (KVPair<V, IList<E>> pair : this.graph) {
             V vertex = pair.getKey();
             if (vertex.equals(start)) {
-                newVertices.add(new newV(vertex, 0.0));
-                toProcess.insert(new newV(vertex, 0.0));
+                newVertices.add(new NewV<V, E>(vertex, 0.0));
+                toProcess.insert(new NewV<V, E>(vertex, 0.0));
             } else {
-                newVertices.add(new newV(vertex));
+                newVertices.add(new NewV<V, E>(vertex));
             } 
         }
         while (toProcess != null && toProcess.size() != 0) {
-            newV u = toProcess.peekMin();
+            NewV<V, E> u = toProcess.peekMin();
             V uprime = u.getVertex();
             if (uprime.equals(end)) {
                 return u.path;
             } else  if (processed.contains(uprime)) {
                 toProcess.removeMin();
             } else {
-                IList<E> edges = this.graph.get(uprime);
-                for (E edge : edges) {
+                IList<E> currEdges = this.graph.get(uprime);
+                for (E edge : currEdges) {
                     V vprime = edge.getOtherVertex(uprime);
-                    for (newV v: newVertices) {
+                    for (NewV<V, E> v: newVertices) {
                         if (v.getVertex().equals(vprime)) {
                             if (u.getDistance() + edge.getWeight() < v.getDistance()) {
                                 IList<E> path = new DoubleLinkedList<>();
@@ -228,7 +228,7 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
                                     path.add(e);
                                 }
                                 path.add(edge);
-                                newV dupe = new newV(vprime, u.getDistance() + edge.getWeight(), path);
+                                NewV<V, E> dupe = new NewV<>(vprime, u.getDistance() + edge.getWeight(), path);
                                 toProcess.insert(dupe);
                                
                             }
@@ -244,32 +244,26 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
              
             
         
-        return output;
-        
-        
-        
-        
-        
-        
+        return output;    
     }
-    private class newV implements Comparable<newV>{
-        private V vertex;
-        private double distance;
+    private static class NewV<V, E> implements Comparable<NewV<V, E>> {
+        public V vertex;
+        public double distance;
         IList<E> path;
         
-        private newV(V vertex) {
+        public NewV(V vertex) {
             this.vertex = vertex;
             this.distance = Double.POSITIVE_INFINITY;
             this.path = new DoubleLinkedList<>();
         }
         
-        private newV(V vertex, Double value) {
+        public NewV(V vertex, Double value) {
             this.vertex = vertex;
             this.distance = value;
             this.path = new DoubleLinkedList<>();
         }
         
-        private newV(V vertex, Double value, IList<E> path) {
+        public NewV(V vertex, Double value, IList<E> path) {
             this.vertex = vertex;
             this.distance = value;
             this.path = path;
@@ -283,10 +277,10 @@ public class Graph<V, E extends Edge<V> & Comparable<E>> {
         }
         
         @Override
-        public int compareTo(newV vertex) {
-            if (this.distance == vertex.getDistance()) {
+        public int compareTo(NewV<V, E> newVertex) {
+            if (this.distance == newVertex.getDistance()) {
                 return 0;
-            } else if (this.distance > vertex.getDistance()) {
+            } else if (this.distance > newVertex.getDistance()) {
                 return 1;
             } else {
                 return -1;
